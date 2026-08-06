@@ -1,7 +1,6 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
 {% block page_title %}{{page_title}}{% endblock page_title %}
-
 {% block content %}
 
 <section class="content">
@@ -9,8 +8,7 @@
         <div class="row">
             <div class="col-md-12">
                 <!-- general form elements -->
-       
-                <!-- /.card -->
+
 <div class="card card-dark">
     <div class="card-header"><h3 class="card-title">{{page_title}}</h3>
     </div>
@@ -18,24 +16,72 @@
 
        <table class="table table-bordered" style="min-width: 600px;">
            <tr>
-               <th>ID</th>
+               <th>#</th>
                <th>Subject</th>
                <th>Test</th>
                <th>Exam</th>
-               <th>Total</th>
-        </tr>
-        {% for result in results %}
-        <tr>
-            <td>{{forloop.counter}}</td>
-            <td>{{ result.subject }}</td>
-            <td>{{ result.test }}</td>
-            <td>{{ result.exam }}</td>
-            <td>{{ result.test|add:result.exam }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
-    </div>
+               <th>Total (200)</th>
+               <th>Percentage</th>
+               <th>GPA (4.0)</th>
+           </tr>
+           {% for data in results_with_data %}
+           <tr>
+               <td>{{ forloop.counter }}</td>
+               <td>{{ data.result.subject }}</td>
+               <td>{{ data.result.test }}</td>
+               <td>{{ data.result.exam }}</td>
+               <td>{{ data.total_marks }}</td>
+               <td>{{ data.percentage|floatformat:2 }}%</td>
+               <td>{{ data.gpa|floatformat:2 }}</td>
+               </tr>
+               {% endfor %}
+       </table>
+   </div>
+   </div>
+   {% if overall_gpa %}
+   <div class="card card-info mt-3">
+        <div class="card-header">
+            <h3 class="card-title">Overall GPA</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Overall GPA (out of 4.0):</strong> {{ overall_gpa|floatformat:2 }}</p>
+        </div>
+   </div>
+   {% endif %}
+
+   {% if show_prediction_form or show_prediction_result %}
+   <div class="card card-warning mt-3">
+        <div class="card-header">
+            <h3 class="card-title">GPA Prediction</h3>
+        </div>
+        <div class="card-body">
+            {% if show_prediction_form %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="target_gpa">Enter your target GPA for the course (out of 4.0):</label>
+                        <input type="number" step="0.01" min="0.0" max="4.0" class="form-control" id="target_gpa" name="target_gpa" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Calculate Required GPA</button>
+                </form>
+            {% endif %}
+            {% if show_prediction_result %}
+                <p><strong>Current Overall GPA:</strong> {{ overall_gpa|floatformat:2 }}</p>
+                <p><strong>Target GPA:</strong> {{ target_gpa|floatformat:2 }}</p>
+                <p><strong>Total Subjects in Course:</strong> {{ total_subjects }}</p>
+                <p><strong>Completed Subjects:</strong> {{ results_with_data|length }}</p>
+                <p><strong>Remaining Subjects:</strong> {{ remaining_subjects }}</p>
+                {% if required_gpa_per_subject is not None %}
+                    <p><strong>Required Average GPA per Remaining Subject:</strong> {{ required_gpa_per_subject|floatformat:2 }}</p>
+                    <p><em>Note: This assumes equal weight for all subjects and that you have completed {{ results_with_data|length }} subjects.</em></p>
+                {% else %}
+                    <p>No remaining subjects or unable to calculate.</p>
+                {% endif %}
+            </div>
+        </div>
+   </div>
+   {% endif %}
+
             </div>
         </div>
     </div>

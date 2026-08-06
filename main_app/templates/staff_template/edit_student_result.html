@@ -15,24 +15,18 @@
                         <h3 class="card-title">{{page_title}}</h3>
                     </div>
 
-       
                     <!-- /.card-header -->
                     <!-- form start -->
                     <div class="card-body">
-
-
-                     
-
-                 {{ form }}
-
+                        {{ form }}
                     </div>
                     <!-- /.card-body -->
 
                     <div class="card-footer">
                         <button type="submit" id='update_result' class="btn btn-primary btn-block">Update Result</button>
-               
                     </div>
                 </form>
+                </div>
                 </div>
                 <!-- /.card -->
 
@@ -40,8 +34,90 @@
         </div>
     </div>
 </section>
-{% endblock content %}
 
+{% if show_prediction_form or show_prediction_result %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-info">
+                    <div class="card-header">
+                        <h3 class="card-title">Current Subject Results</h3>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Student:</strong> {{ student.admin.first_name }} {{ student.admin.last_name }}</p>
+                        <p><strong>Subject:</strong> {{ subject.name }}</p>
+                        <p><strong>Test Marks:</strong> {{ test|default:0 }}</p>
+                        <p><strong>Exam Marks:</strong> {{ exam|default:0 }}</p>
+                        <p><strong>Total Marks Obtained:</strong> {{ total_marks }} / 200</p>
+                        <p><strong>Percentage:</strong> {{ percentage|floatformat:2 }}%</p>
+                        <p><strong>GPA (out of 4.0):</strong> {{ gpa|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if show_prediction_form %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-warning">
+                    <div class="card-header">
+                        <h3 class="card-title">GPA Prediction</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="student_id" value="{{ student_id }}">
+                            <input type="hidden" name="subject_id" value="{{ subject_id }}">
+                            <div class="form-group">
+                                <label for="target_gpa">Enter your target GPA for the course (out of 4.0):</label>
+                                <input type="number" step="0.01" min="0.0" max="4.0" class="form-control" id="target_gpa" name="target_gpa" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Calculate Required Score</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if show_prediction_result %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Prediction Result</h3>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Current GPA for {{ subject.name }}:</strong> {{ gpa|floatformat:2 }}</p>
+                        <p><strong>Target GPA for the course:</strong> {{ target_gpa|floatformat:2 }}</p>
+                        <p><strong>Total subjects in course:</strong> {{ total_subjects }}</p>
+                        <p><strong>Remaining subjects (assuming only this one is done):</strong> {{ remaining_subjects }}</p>
+                        {% if required_marks is not null and required_gpa_per_subject is not null %}
+                            <p><strong>Required average GPA per remaining subject:</strong> {{ required_gpa_per_subject|floatformat:2 }}</p>
+                            <p><strong>Required average score per remaining subject (out of 200):</strong> {{ required_marks|floatformat:2 }}</p>
+                            <p><em>Note: This calculation assumes that you have not taken any other subjects yet and that each subject has equal weight.</em></p>
+                        {% else %}
+                            <p>Cannot calculate: no remaining subjects or invalid input.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endblock content %}
 
 {% block custom_js %}
 <script>
@@ -52,9 +128,9 @@
             $("#id_session_year").change(function () {
                 fetchStudents();
                 });
-   $("#id_student").change(function () {
-    fetch_student_result();
-                });
+           $("#id_student").change(function () {
+            fetch_student_result();
+                    });
                 $("#id_exam").hide()
                 $("#id_test").hide()
                 $("#update_result").hide()
@@ -84,13 +160,13 @@
                     for (key in json_data) {
                         div_data += "<option value='" + json_data[key]['id'] + "'>" + json_data[key]['name'] + " </option>"
                     }
-             
+
                     $("#id_student").html(div_data)
                 }
             }).fail(function (response) {
                 alert("Error in fetching students")
             })
-               }
+           }
 
                function fetch_student_result(){
                 var student = $("#id_student").val()
@@ -98,8 +174,10 @@
                 $("#id_test").val(null)
                 $("#id_exam").val(null)
                 $("#id_exam").hide()
+                $("#id_test").hide()
                 $("#update_result").hide()
                 $("#id_test").hide()
+                $("#id_exam").hide()
                 $('label[for="id_test"]').hide();
                 $('label[for="id_exam"]').hide();
                 if (student.length  == 0 || subject.length == 0 || student < 1 || subject < 1){
@@ -117,7 +195,7 @@
                         alert("No data to display")
                     } else {
                         var json_data = JSON.parse(response)
-                        
+
                             $("#id_test").val(json_data['test'])
                             $("#id_exam").val(json_data['exam'])
                             $("#id_exam").show()

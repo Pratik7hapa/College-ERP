@@ -200,10 +200,55 @@ def student_view_notification(request):
 def student_view_result(request):
     student = get_object_or_404(Student, admin=request.user)
     results = StudentResult.objects.filter(student=student)
+
+    # Prepare results with additional data
+    results_with_data = []
+    total_gpa = 0.0
+    for result in results:
+        total_marks = result.test + result.exam
+        # Assuming each of test and exam is out of 100, so total out of 200
+        percentage = (total_marks / 200) * 100
+        gpa = (percentage / 100) * 4.0
+        results_with_data.append({
+            'result': result,
+            'total_marks': total_marks,
+            'percentage': percentage,
+            'gpa': gpa
+        })
+        total_gpa += gpa
+
+    overall_gpa = total_gpa / len(results_with_data) if results_with_data else 0.0
+
+    total_subjects = Subject.objects.filter(course=student.course).count()
+    remaining_subjects = total_subjects - len(results_with_data)
+
     context = {
-        'results': results,
+        'results_with_data': results_with_data,
+        'overall_gpa': overall_gpa,
+        'total_subjects': total_subjects,
+        'remaining_subjects': remaining_subjects,
         'page_title': "View Results"
     }
+
+    # Handle prediction form submission
+    if request.method == 'POST':
+        if 'target_gpa' in request.POST:
+            try:
+                target_gpa = float(request.POST.get('target_gpa'))
+                if remaining_subjects > 0:
+                    required_gpa_per_subject = (target_gpa * total_subjects - overall_gpa * len(results_with_data)) / remaining_subjects
+                else:
+                    required_gpa_per_subject = None
+                context.update({
+                    'target_gpa': target_gpa,
+                    'required_gpa_per_subject': required_gpa_per_subject,
+                    'show_prediction_result': True
+                })
+            except (ValueError, TypeError):
+                pass  # Ignore invalid input
+        else:
+            context['show_prediction_form'] = True
+
     return render(request, "student_template/student_view_result.html", context)
 
 
