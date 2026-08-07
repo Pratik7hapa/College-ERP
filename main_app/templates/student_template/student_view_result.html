@@ -61,6 +61,19 @@
     </div>
     {% endif %}
 
+    {% if predicted_future_gpa is not None %}
+    <div class="card card-info mt-3">
+        <div class="card-header">
+            <h3 class="card-title">Predicted Future GPA</h3>
+        </div>
+
+        <div class="card-body">
+            <h4>{{ predicted_future_gpa|floatformat:2 }} / 4.00</h4>
+            <p><small>Based on trend of your past performance</small></p>
+        </div>
+    </div>
+    {% endif %}
+
     {% if show_prediction_form or show_prediction_result %}
 
     <div class="card card-warning mt-3">
@@ -118,10 +131,15 @@
                 <strong>Required GPA per Remaining Subject:</strong>
                 {{ required_gpa_per_subject|floatformat:2 }}
             </div>
+            <div class="alert alert-info">
+                <strong>Required Total Marks per Remaining Subject (out of 200):</strong>
+                {{ required_total_marks_per_subject|floatformat:2 }}
+            </div>
 
             <p>
                 <small>
                     This assumes equal credit weight for all remaining subjects.
+                    You can split the required marks between Test and Exam as per your strategy.
                 </small>
             </p>
 

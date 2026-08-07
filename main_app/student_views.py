@@ -14,6 +14,46 @@ from .forms import *
 from .models import *
 
 
+def predict_next_values(values, steps_ahead=1):
+    """
+    Given a list of values, predict the next 'steps_ahead' values using linear regression.
+    Returns a list of predicted values.
+    """
+    n = len(values)
+    if n < 2:
+        # Not enough data to fit a trend, return the last value repeated
+        if n == 1:
+            return [values[-1]] * steps_ahead
+        else:
+            return [0.0] * steps_ahead
+
+    # Convert to numerical indices
+    x = list(range(n))
+    y = values
+
+    # Calculate slope (m) and intercept (c) for y = m*x + c
+    sum_x = sum(x)
+    sum_y = sum(y)
+    sum_xy = sum(xi * yi for xi, yi in zip(x, y))
+    sum_x2 = sum(xi * xi for xi in x)
+
+    denominator = n * sum_x2 - sum_x * sum_x
+    if denominator == 0:
+        # Avoid division by zero (if all x are same, which shouldn't happen with indices)
+        return [values[-1]] * steps_ahead
+
+    m = (n * sum_xy - sum_x * sum_y) / denominator
+    c = (sum_y - m * sum_x) / n
+
+    # Predict for the next 'steps_ahead' steps
+    predictions = []
+    for i in range(steps_ahead):
+        next_x = n + i
+        predictions.append(m * next_x + c)
+
+    return predictions
+
+
 def student_home(request):
     student = get_object_or_404(Student, admin=request.user)
     total_subject = Subject.objects.filter(course=student.course).count()
@@ -199,11 +239,14 @@ def student_view_notification(request):
 
 def student_view_result(request):
     student = get_object_or_404(Student, admin=request.user)
-    results = StudentResult.objects.filter(student=student)
+    # Order results by created_at to have a time sequence for prediction
+    results = StudentResult.objects.filter(student=student).order_by('created_at')
 
     # Prepare results with additional data
     results_with_data = []
     total_gpa = 0.0
+    test_scores = []
+    exam_scores = []
     for result in results:
         total_marks = result.test + result.exam
         # Assuming each of test and exam is out of 100, so total out of 200
@@ -216,38 +259,72 @@ def student_view_result(request):
             'gpa': gpa
         })
         total_gpa += gpa
+        test_scores.append(result.test)
+        exam_scores.append(result.exam)
 
     overall_gpa = total_gpa / len(results_with_data) if results_with_data else 0.0
 
     total_subjects = Subject.objects.filter(course=student.course).count()
-    remaining_subjects = total_subjects - len(results_with_data)
+    completed_subjects = len(results_with_data)
+    remaining_subjects = total_subjects - completed_subjects
+
+    # AI-based GPA prediction for future subjects based on trend
+    predicted_future_gpa = None
+    if completed_subjects > 0:
+        # Predict test and exam scores for the remaining subjects
+        predicted_test_scores = predict_next_values(test_scores, steps_ahead=remaining_subjects) if test_scores else [0.0] * remaining_subjects
+        predicted_exam_scores = predict_next_values(exam_scores, steps_ahead=remaining_subjects) if exam_scores else [0.0] * remaining_subjects
+
+        # Calculate GPA for each predicted subject
+        predicted_gpa_sum = 0.0
+        for p_test, p_exam in zip(predicted_test_scores, predicted_exam_scores):
+            p_total_marks = p_test + p_exam
+            p_percentage = (p_total_marks / 200) * 100
+            p_gpa = (p_percentage / 100) * 4.0
+            predicted_gpa_sum += p_gpa
+
+        # Predicted future GPA = (GPA of completed subjects + GPA of predicted remaining subjects) / total subjects
+        predicted_future_gpa = (total_gpa + predicted_gpa_sum) / total_subjects if total_subjects > 0 else 0.0
+    else:
+        predicted_future_gpa = 0.0
 
     context = {
         'results_with_data': results_with_data,
         'overall_gpa': overall_gpa,
         'total_subjects': total_subjects,
         'remaining_subjects': remaining_subjects,
+        'predicted_future_gpa': predicted_future_gpa,
         'page_title': "View Results"
     }
 
-    # Handle prediction form submission
-    if request.method == 'POST':
-        if 'target_gpa' in request.POST:
-            try:
-                target_gpa = float(request.POST.get('target_gpa'))
-                if remaining_subjects > 0:
-                    required_gpa_per_subject = (target_gpa * total_subjects - overall_gpa * len(results_with_data)) / remaining_subjects
-                else:
-                    required_gpa_per_subject = None
-                context.update({
-                    'target_gpa': target_gpa,
-                    'required_gpa_per_subject': required_gpa_per_subject,
-                    'show_prediction_result': True
-                })
-            except (ValueError, TypeError):
-                pass  # Ignore invalid input
-        else:
-            context['show_prediction_form'] = True
+    # Handle target GPA form submission
+    show_prediction_form = False
+    show_prediction_result = False
+    if request.method == 'POST' and 'target_gpa' in request.POST:
+        try:
+            target_gpa = float(request.POST.get('target_gpa'))
+            if remaining_subjects > 0:
+                required_gpa_per_subject = (target_gpa * total_subjects - overall_gpa * completed_subjects) / remaining_subjects
+                # Convert required GPA per subject to total marks out of 200
+                required_total_marks_per_subject = (required_gpa_per_subject / 4.0) * 200
+            else:
+                required_gpa_per_subject = None
+                required_total_marks_per_subject = None
+            context.update({
+                'target_gpa': target_gpa,
+                'required_gpa_per_subject': required_gpa_per_subject,
+                'required_total_marks_per_subject': required_total_marks_per_subject,
+                'show_prediction_result': True
+            })
+        except (ValueError, TypeError):
+            pass  # Ignore invalid input
+    else:
+        show_prediction_form = True
+
+    context.update({
+        'show_prediction_form': show_prediction_form,
+        'show_prediction_result': show_prediction_result
+    })
 
     return render(request, "student_template/student_view_result.html", context)
 
