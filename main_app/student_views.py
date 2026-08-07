@@ -248,10 +248,10 @@ def student_view_result(request):
     test_scores = []
     exam_scores = []
     for result in results:
+        # Test (Internal Exam) out of 50, Exam (Final Exam) out of 50, total out of 100
         total_marks = result.test + result.exam
-        # Assuming each of test and exam is out of 100, so total out of 200
-        percentage = (total_marks / 200) * 100
-        gpa = (percentage / 100) * 4.0
+        percentage = total_marks  # out of 100
+        gpa = (percentage / 100) * 4.0  # convert to 4.0 scale
         results_with_data.append({
             'result': result,
             'total_marks': total_marks,
@@ -278,8 +278,9 @@ def student_view_result(request):
         # Calculate GPA for each predicted subject
         predicted_gpa_sum = 0.0
         for p_test, p_exam in zip(predicted_test_scores, predicted_exam_scores):
+            # Each predicted score is out of 50, total out of 100
             p_total_marks = p_test + p_exam
-            p_percentage = (p_total_marks / 200) * 100
+            p_percentage = p_total_marks  # out of 100
             p_gpa = (p_percentage / 100) * 4.0
             predicted_gpa_sum += p_gpa
 
@@ -305,15 +306,22 @@ def student_view_result(request):
             target_gpa = float(request.POST.get('target_gpa'))
             if remaining_subjects > 0:
                 required_gpa_per_subject = (target_gpa * total_subjects - overall_gpa * completed_subjects) / remaining_subjects
-                # Convert required GPA per subject to total marks out of 200
-                required_total_marks_per_subject = (required_gpa_per_subject / 4.0) * 200
+                # Convert required GPA per subject to total marks out of 100 (since each subject out of 100)
+                required_total_marks_per_subject = required_gpa_per_subject * 25.0  # because GPA = (marks/100)*4 => marks = GPA*25
+                # Split equally between Internal and Final Exam (each out of 50)
+                required_internal_per_subject = required_total_marks_per_subject / 2.0
+                required_final_per_subject = required_total_marks_per_subject / 2.0
             else:
                 required_gpa_per_subject = None
                 required_total_marks_per_subject = None
+                required_internal_per_subject = None
+                required_final_per_subject = None
             context.update({
                 'target_gpa': target_gpa,
                 'required_gpa_per_subject': required_gpa_per_subject,
                 'required_total_marks_per_subject': required_total_marks_per_subject,
+                'required_internal_per_subject': required_internal_per_subject,
+                'required_final_per_subject': required_final_per_subject,
                 'show_prediction_result': True
             })
         except (ValueError, TypeError):
