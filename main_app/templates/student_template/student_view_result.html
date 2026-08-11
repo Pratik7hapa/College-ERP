@@ -1,0 +1,198 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Student Result</h3>
+        </div>
+
+        <div class="card-body table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Subject</th>
+                        <th>Internal Exam (out of 50)</th>
+                        <th>Final Exam (out of 50)</th>
+                        <th>Total (out of 100)</th>
+                        <th>Percentage</th>
+                        <th>GPA (4.0)</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for data in results_with_data %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ data.result.subject }}</td>
+                        <td>{{ data.result.test }}</td>
+                        <td>{{ data.result.exam }}</td>
+                        <td>{{ data.total_marks }}</td>
+                        <td>{{ data.percentage|floatformat:2 }}%</td>
+                        <td>{{ data.gpa|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            No Results Available
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if overall_gpa %}
+    <div class="card card-info mt-3">
+        <div class="card-header">
+            <h3 class="card-title">Overall GPA</h3>
+        </div>
+
+        <div class="card-body">
+            <h4>{{ overall_gpa|floatformat:2 }} / 4.00</h4>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if predicted_future_gpa is not None %}
+    <div class="card card-info mt-3">
+        <div class="card-header">
+            <h3 class="card-title">Predicted Future GPA</h3>
+        </div>
+
+        <div class="card-body">
+            <h4>{{ predicted_future_gpa|floatformat:2 }} / 4.00</h4>
+            <p><small>Based on trend of your past performance</small></p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if show_prediction_form or show_prediction_result %}
+
+    <div class="card card-warning mt-3">
+
+        <div class="card-header">
+            <h3 class="card-title">GPA Prediction</h3>
+        </div>
+
+        <div class="card-body">
+
+            {% if show_prediction_form %}
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label>Target GPA (Out of 4.0)</label>
+
+                    <input
+                        type="number"
+                        class="form-control"
+                        name="target_gpa"
+                        id="target_gpa"
+                        min="0"
+                        max="4"
+                        step="0.01"
+                        required>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-2">
+                    Calculate Required GPA
+                </button>
+
+            </form>
+
+            <hr>
+
+            {% endif %}
+
+            {% if show_prediction_result %}
+
+            <p><strong>Current GPA:</strong> {{ overall_gpa|floatformat:2 }}</p>
+
+            <p><strong>Target GPA:</strong> {{ target_gpa|floatformat:2 }}</p>
+
+            <p><strong>Total Subjects:</strong> {{ total_subjects }}</p>
+
+            <p><strong>Completed Subjects:</strong> {{ results_with_data|length }}</p>
+
+            <p><strong>Remaining Subjects:</strong> {{ remaining_subjects }}</p>
+
+            {% if required_gpa_per_subject != None %}
+
+            <div class="alert alert-success">
+                <strong>Required GPA per Remaining Subject:</strong>
+                {{ required_gpa_per_subject|floatformat:2 }}
+            </div>
+            <div class="alert alert-info">
+                <strong>Required Total Marks per Remaining Subject (out of 100):</strong>
+                {{ required_total_marks_per_subject|floatformat:2 }}
+            </div>
+            <div class="alert alert-info">
+                <strong>Required Internal Exam Marks per Remaining Subject (out of 50):</strong>
+                {{ required_internal_per_subject|floatformat:2 }}
+            </div>
+            <div class="alert alert-info">
+                <strong>Required Final Exam Marks per Remaining Subject (out of 50):</strong>
+                {{ required_final_per_subject|floatformat:2 }}
+            </div>
+
+            {% if target_gpa_table %}
+            <div class="alert alert-info mt-3">
+                <strong>Required Marks per Remaining Subject:</strong>
+            </div>
+            <table class="table table-bordered mt-2">
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Required Internal Exam Marks (out of 50)</th>
+                        <th>Required Final Exam Marks (out of 50)</th>
+                        <th>Required Total Marks (out of 100)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in target_gpa_table %}
+                    <tr>
+                        <td>{{ row.subject }}</td>
+                        <td>{{ row.required_internal|floatformat:2 }}</td>
+                        <td>{{ row.required_final|floatformat:2 }}</td>
+                        <td>{{ row.required_total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+
+            <p>
+                <small>
+                    This assumes equal credit weight for all remaining subjects.
+                    Internal and Final Exam marks are shown assuming equal split (50/50) of the required total marks.
+                </small>
+            </p>
+
+            {% else %}
+
+            <div class="alert alert-warning">
+                No remaining subjects or GPA cannot be calculated.
+            </div>
+
+            {% endif %}
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock content %}
