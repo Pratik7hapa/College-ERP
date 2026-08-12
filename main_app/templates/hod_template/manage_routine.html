@@ -1,0 +1,80 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{page_title}}{% endblock page_title %}
+
+{% block content %}
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">{{page_title}}</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <form method="GET" class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                            <select name="course" class="form-control" style="width:auto;">
+                                <option value="">All Courses</option>
+                                {% for course in courses %}
+                                <option value="{{course.id}}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{course.name}}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="session" class="form-control" style="width:auto;">
+                                <option value="">All Sessions</option>
+                                {% for session in sessions %}
+                                <option value="{{session.id}}" {% if selected_session == session.id|stringformat:"s" %}selected{% endif %}>{{session}}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-dark">Filter</button>
+                            <a href="{% url 'manage_routine' %}" class="btn btn-secondary">Reset</a>
+                        </form>
+
+                        <div class="table-responsive">
+                        <table id="example2" class="table table-bordered table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Day</th>
+                                    <th>Time</th>
+                                    <th>Subject</th>
+                                    <th>Staff</th>
+                                    <th>Course</th>
+                                    <th>Session</th>
+                                    <th>Room</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for routine in routines %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{routine.get_day_display}}</td>
+                                    <td>{{routine.start_time|time:"h:i A"}} - {{routine.end_time|time:"h:i A"}}</td>
+                                    <td>{{routine.subject.name}}</td>
+                                    <td>{{routine.subject.staff.admin}}</td>
+                                    <td>{{routine.course.name}}</td>
+                                    <td>{{routine.session}}</td>
+                                    <td>{{routine.room|default:"-"}}</td>
+                                    <td>
+                                        <a href="{% url 'edit_routine' routine.id %}" class="btn btn-info">Edit</a> -
+                                        <a href="{% url 'delete_routine' routine.id %}" onclick="return confirm('Are you sure you want to delete this ?')" class="btn btn-danger">Delete</a>
+
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="9" class="text-center">No routine added yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}

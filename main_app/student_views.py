@@ -365,3 +365,16 @@ def view_books(request):
     }
     return render(request, "student_template/view_books.html", context)
 
+
+
+def student_view_routine(request):
+    student = get_object_or_404(Student, admin=request.user)
+    routines = Routine.objects.filter(
+        course=student.course, session=student.session)
+    context = {
+        'rows': build_routine_grid(routines),
+        'days': Routine.DAYS,
+        'total_periods': routines.count(),
+        'page_title': 'Class Routine'
+    }
+    return render(request, 'student_template/student_view_routine.html', context)

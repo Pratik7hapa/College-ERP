@@ -83,6 +83,13 @@ urlpatterns = [
     path("subject/edit/<int:subject_id>",
          hod_views.edit_subject, name='edit_subject'),
 
+    path("routine/add/", hod_views.add_routine, name='add_routine'),
+    path("routine/manage/", hod_views.manage_routine, name='manage_routine'),
+    path("routine/edit/<int:routine_id>",
+         hod_views.edit_routine, name='edit_routine'),
+    path("routine/delete/<int:routine_id>",
+         hod_views.delete_routine, name='delete_routine'),
+
 
     # Staff
     path("staff/home/", staff_views.staff_home, name='staff_home'),
@@ -109,6 +116,8 @@ urlpatterns = [
     path("staff/attendance/update_save/",
          staff_views.update_attendance, name='update_attendance'),
     path("staff/fcmtoken/", staff_views.staff_fcmtoken, name='staff_fcmtoken'),
+    path("staff/view/routine/", staff_views.staff_view_routine,
+         name='staff_view_routine'),
     path("staff/view/notification/", staff_views.staff_view_notification,
          name="staff_view_notification"),
     path("staff/result/add/", staff_views.staff_add_result, name='staff_add_result'),
@@ -135,6 +144,9 @@ urlpatterns = [
 
      
      path("student/viewbooks/", student_views.view_books, name="view_books"),
+
+    path("student/view/routine/", student_views.student_view_routine,
+         name='student_view_routine'),
 
     path("student/view/notification/", student_views.student_view_notification,
          name="student_view_notification"),

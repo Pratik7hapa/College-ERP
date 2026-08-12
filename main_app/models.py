@@ -125,6 +125,48 @@ class Subject(models.Model):
         return self.name
 
 
+class Routine(models.Model):
+    DAYS = ((1, "Monday"), (2, "Tuesday"), (3, "Wednesday"),
+            (4, "Thursday"), (5, "Friday"))
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    day = models.SmallIntegerField(choices=DAYS)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    room = models.CharField(max_length=50, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['day', 'start_time']
+
+    @property
+    def staff(self):
+        # The teacher always comes from the subject, so it can never go stale
+        return self.subject.staff
+
+    def __str__(self):
+        return f"{self.subject.name} - {self.get_day_display()} {self.start_time.strftime('%I:%M %p')}"
+
+
+def build_routine_grid(routines):
+    """Turn a Routine queryset into weekly grid rows: one row per time slot,
+    one cell per weekday. Each cell is a list, so a clash is still visible."""
+    routines = list(routines.select_related(
+        'course', 'subject', 'subject__staff__admin'))
+    slots = sorted({(r.start_time, r.end_time) for r in routines})
+    rows = []
+    for start, end in slots:
+        cells = []
+        for day, _ in Routine.DAYS:
+            cells.append([r for r in routines if r.day == day
+                          and r.start_time == start and r.end_time == end])
+        rows.append({'start_time': start, 'end_time': end, 'cells': cells})
+    return rows
+
+
 class Attendance(models.Model):
     session = models.ForeignKey(Session, on_delete=models.DO_NOTHING)
     subject = models.ForeignKey(Subject, on_delete=models.DO_NOTHING)

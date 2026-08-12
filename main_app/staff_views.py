@@ -355,3 +355,14 @@ def view_issued_book(request):
             i=i+1
             details.append(t)
     return render(request, "staff_template/view_issued_book.html", {'issuedBooks':issuedBooks, 'details':details})
+
+def staff_view_routine(request):
+    staff = get_object_or_404(Staff, admin=request.user)
+    routines = Routine.objects.filter(subject__staff=staff)
+    context = {
+        'rows': build_routine_grid(routines),
+        'days': Routine.DAYS,
+        'total_periods': routines.count(),
+        'page_title': 'My Class Routine'
+    }
+    return render(request, 'staff_template/staff_view_routine.html', context)

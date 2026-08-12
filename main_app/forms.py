@@ -1,5 +1,5 @@
 from django import forms
-from django.forms.widgets import DateInput, TextInput
+from django.forms.widgets import DateInput, TextInput, TimeInput
 
 from .models import *
 from . import models
@@ -177,6 +177,60 @@ class StaffEditForm(CustomUserForm):
     class Meta(CustomUserForm.Meta):
         model = Staff
         fields = CustomUserForm.Meta.fields
+
+
+class RoutineForm(FormSettings):
+    def __init__(self, *args, **kwargs):
+        super(RoutineForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super(RoutineForm, self).clean()
+        course = cleaned_data.get('course')
+        session = cleaned_data.get('session')
+        subject = cleaned_data.get('subject')
+        day = cleaned_data.get('day')
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+
+        if subject and course and subject.course_id != course.id:
+            self.add_error(
+                'subject', "This subject is not taught in the selected course")
+
+        if not (day and start_time and end_time):
+            return cleaned_data
+
+        if end_time <= start_time:
+            self.add_error('end_time', "End time must be after start time")
+            return cleaned_data
+
+        # Two periods overlap when each one starts before the other ends
+        overlapping = Routine.objects.filter(
+            day=day, start_time__lt=end_time, end_time__gt=start_time)
+        if self.instance.pk:
+            overlapping = overlapping.exclude(pk=self.instance.pk)
+
+        if course and session:
+            clash = overlapping.filter(course=course, session=session).first()
+            if clash:
+                self.add_error('start_time', "This class already has %s at that time on %s" % (
+                    clash.subject.name, clash.get_day_display()))
+
+        if subject:
+            clash = overlapping.filter(subject__staff=subject.staff).first()
+            if clash:
+                self.add_error('start_time', "%s is already teaching %s to %s at that time" % (
+                    subject.staff, clash.subject.name, clash.course.name))
+
+        return cleaned_data
+
+    class Meta:
+        model = Routine
+        fields = ['course', 'session', 'subject',
+                  'day', 'start_time', 'end_time', 'room']
+        widgets = {
+            'start_time': TimeInput(attrs={'type': 'time'}),
+            'end_time': TimeInput(attrs={'type': 'time'}),
+        }
 
 
 class EditResultForm(FormSettings):

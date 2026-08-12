@@ -723,3 +723,71 @@ def delete_session(request, session_id):
         messages.error(
             request, "There are students assigned to this session. Please move them to another session.")
     return redirect(reverse('manage_session'))
+
+
+def add_routine(request):
+    form = RoutineForm(request.POST or None)
+    context = {
+        'form': form,
+        'page_title': 'Add Routine'
+    }
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "Successfully Added")
+                return redirect(reverse('add_routine'))
+            except Exception as e:
+                messages.error(request, "Could Not Add " + str(e))
+        else:
+            messages.error(request, "Fill Form Properly")
+
+    return render(request, 'hod_template/add_routine_template.html', context)
+
+
+def manage_routine(request):
+    routines = Routine.objects.all()
+    course_id = request.GET.get('course')
+    session_id = request.GET.get('session')
+    if course_id:
+        routines = routines.filter(course_id=course_id)
+    if session_id:
+        routines = routines.filter(session_id=session_id)
+    context = {
+        'routines': routines.select_related('course', 'session', 'subject', 'subject__staff__admin'),
+        'courses': Course.objects.all(),
+        'sessions': Session.objects.all(),
+        'selected_course': course_id,
+        'selected_session': session_id,
+        'page_title': 'Manage Routine'
+    }
+    return render(request, "hod_template/manage_routine.html", context)
+
+
+def edit_routine(request, routine_id):
+    instance = get_object_or_404(Routine, id=routine_id)
+    form = RoutineForm(request.POST or None, instance=instance)
+    context = {
+        'form': form,
+        'routine_id': routine_id,
+        'page_title': 'Edit Routine'
+    }
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "Successfully Updated")
+                return redirect(reverse('manage_routine'))
+            except Exception as e:
+                messages.error(request, "Could Not Update " + str(e))
+        else:
+            messages.error(request, "Fill Form Properly")
+
+    return render(request, 'hod_template/edit_routine_template.html', context)
+
+
+def delete_routine(request, routine_id):
+    routine = get_object_or_404(Routine, id=routine_id)
+    routine.delete()
+    messages.success(request, "Routine deleted successfully!")
+    return redirect(reverse('manage_routine'))

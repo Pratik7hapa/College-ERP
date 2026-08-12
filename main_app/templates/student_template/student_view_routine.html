@@ -1,0 +1,61 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{page_title}}{% endblock page_title %}
+
+{% block content %}
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">{{page_title}}</h3>
+                        <span class="float-right text-muted">{{total_periods}} period{{total_periods|pluralize}} per week</span>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body table-responsive">
+                        {% if rows %}
+                        <table class="table table-bordered text-center align-middle">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th style="width:130px;">Time</th>
+                                    {% for value, label in days %}
+                                    <th>{{label}}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in rows %}
+                                <tr>
+                                    <th class="align-middle">
+                                        {{row.start_time|time:"h:i A"}}<br>
+                                        <small class="text-muted">{{row.end_time|time:"h:i A"}}</small>
+                                    </th>
+                                    {% for cell in row.cells %}
+                                    <td class="align-middle">
+                                        {% for routine in cell %}
+                                        <div{% if not forloop.first %} class="mt-2 pt-2 border-top"{% endif %}>
+                                            <strong>{{routine.subject.name}}</strong><br>
+                                            <small>{{routine.subject.staff.admin}}</small>
+                                            {% if routine.room %}<br><small class="text-muted">Room {{routine.room}}</small>{% endif %}
+                                        </div>
+                                        {% empty %}
+                                        <span class="text-muted">-</span>
+                                        {% endfor %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p class="text-center text-muted mb-0">No routine has been published for your class yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}

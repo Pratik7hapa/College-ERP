@@ -110,6 +110,28 @@
             </div>
         </div>
 
+        <div class="nav-item has-submenu {% if 'routine' in request.path %}open{% endif %}">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-clock"></i>
+                <span class="nav-text">Routine</span>
+                <i class="nav-arrow fas fa-chevron-right"></i>
+            </a>
+            <div class="nav-submenu">
+                <div class="nav-item">
+                    {% url 'add_routine' as add_routine %}
+                    <a href="{{ add_routine }}" class="nav-link {% if add_routine == request.path %}active{% endif %}">
+                        <span class="nav-text">Add Routine</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    {% url 'manage_routine' as manage_routine %}
+                    <a href="{{ manage_routine }}" class="nav-link {% if manage_routine == request.path or 'routine/edit' in request.path %}active{% endif %}">
+                        <span class="nav-text">Manage Routine</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <h6 class="nav-section-title">User Management</h6>
         
         <div class="nav-item">
@@ -244,8 +266,16 @@
             </a>
         </div>
 
+        <div class="nav-item">
+            {% url 'staff_view_routine' as staff_view_routine %}
+            <a href="{{ staff_view_routine }}" class="nav-link {% if staff_view_routine == request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-clock"></i>
+                <span class="nav-text">Class Routine</span>
+            </a>
+        </div>
+
         <h6 class="nav-section-title">Attendance</h6>
-        
+
         <div class="nav-item">
             {% url 'staff_take_attendance' as staff_take_attendance %}
             <a href="{{ staff_take_attendance }}" class="nav-link {% if staff_take_attendance == request.path %}active{% endif %}">
@@ -319,7 +349,15 @@
         </div>
 
         <h6 class="nav-section-title">Academic</h6>
-        
+
+        <div class="nav-item">
+            {% url 'student_view_routine' as student_view_routine %}
+            <a href="{{ student_view_routine }}" class="nav-link {% if student_view_routine == request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-clock"></i>
+                <span class="nav-text">Class Routine</span>
+            </a>
+        </div>
+
         <div class="nav-item">
             {% url 'student_view_attendance' as student_view_attendance %}
             <a href="{{ student_view_attendance }}" class="nav-link {% if student_view_attendance == request.path %}active{% endif %}">
