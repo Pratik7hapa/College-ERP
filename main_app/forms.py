@@ -244,6 +244,14 @@ class EditResultForm(FormSettings):
     class Meta:
         model = StudentResult
         fields = ['session_year', 'subject', 'student', 'test', 'exam']
+        labels = {
+            'test': 'Internal Marks',
+            'exam': 'Final Marks',
+        }
+        widgets = {
+            'test': forms.NumberInput(attrs={'max': 50, 'min': 0}),
+            'exam': forms.NumberInput(attrs={'max': 50, 'min': 0}),
+        }
 
 #todos
 # class TodoForm(forms.ModelForm):
