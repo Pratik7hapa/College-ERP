@@ -36,8 +36,8 @@ class EditResultView(View):
                     messages.success(request, "Result Updated")
                     # Calculate current stats for the subject
                     total_marks = test + exam
-                    # Assuming each of test and exam is out of 100, so total out of 200
-                    percentage = (total_marks / 200) * 100
+                    # Assuming each of test and exam is out of 50, so total out of 100
+                    percentage = total_marks  # since out of 100
                     gpa = (percentage / 100) * 4.0
                     total_subjects = Subject.objects.filter(course=student.course).count()
                     remaining_subjects = total_subjects - 1  # assuming only this subject is done so far
@@ -69,7 +69,7 @@ class EditResultView(View):
                 test = result.test
                 exam = result.exam
                 total_marks = test + exam
-                percentage = (total_marks / 200) * 100
+                percentage = total_marks  # out of 100
                 gpa = (percentage / 100) * 4.0
                 total_subjects = Subject.objects.filter(course=student.course).count()
                 remaining_subjects = total_subjects - 1  # assuming only this subject is done so far
@@ -77,12 +77,8 @@ class EditResultView(View):
                     required_gpa_per_subject = (target_gpa * total_subjects - gpa) / remaining_subjects
                     # Convert GPA to percentage: GPA = (percentage/100)*4  => percentage = (GPA/4)*100
                     required_percentage = (required_gpa_per_subject / 4.0) * 100
-                    # Convert percentage to marks out of 200
-                    required_marks = (required_percentage / 100) * 200
-                    # We'll split equally between test and exam? We don't know the split, so show total required marks for the subject
-                    # But note: the student might have multiple remaining subjects, so we are giving the average required marks per subject
-                    # We'll show the average required marks per subject (out of 200) for each remaining subject.
-                    # Also, we can show the required percentage per subject.
+                    # Convert percentage to marks out of 100
+                    required_marks = required_percentage
                 else:
                     required_marks = None
                     required_gpa_per_subject = None
