@@ -48,57 +48,13 @@ class EditResultView(View):
                         'total_subjects': total_subjects,
                         'remaining_subjects': remaining_subjects,
                         'student_id': student.id,
-                        'subject_id': subject.id,
-                        'show_prediction_form': True
+                        'subject_id': subject.id
                     })
                 except Exception as e:
                     messages.warning(request, "Result Could Not Be Updated")
             else:
                 messages.warning(request, "Result Could Not Be Updated")
             return render(request, "staff_template/edit_student_result.html", context)
-        # Check if it's the prediction form submission
-        elif 'target_gpa' in request.POST:
-            try:
-                target_gpa = float(request.POST.get('target_gpa'))
-                student_id = request.POST.get('student_id')
-                subject_id = request.POST.get('subject_id')
-                student = Student.objects.get(id=student_id)
-                subject = Subject.objects.get(id=subject_id)
-                # Recalculate current stats (we need the test and exam from the saved result)
-                result = StudentResult.objects.get(student=student, subject=subject)
-                test = result.test
-                exam = result.exam
-                total_marks = test + exam
-                percentage = total_marks  # out of 100
-                gpa = (percentage / 100) * 4.0
-                total_subjects = Subject.objects.filter(course=student.course).count()
-                remaining_subjects = total_subjects - 1  # assuming only this subject is done so far
-                if remaining_subjects > 0:
-                    required_gpa_per_subject = (target_gpa * total_subjects - gpa) / remaining_subjects
-                    # Convert GPA to percentage: GPA = (percentage/100)*4  => percentage = (GPA/4)*100
-                    required_percentage = (required_gpa_per_subject / 4.0) * 100
-                    # Convert percentage to marks out of 100
-                    required_marks = required_percentage
-                else:
-                    required_marks = None
-                    required_gpa_per_subject = None
-                context = {
-                    'target_gpa': target_gpa,
-                    'gpa': gpa,
-                    'total_marks': total_marks,
-                    'percentage': percentage,
-                    'required_marks': required_marks,
-                    'required_gpa_per_subject': required_gpa_per_subject,
-                    'total_subjects': total_subjects,
-                    'remaining_subjects': remaining_subjects,
-                    'student': student,
-                    'subject': subject,
-                    'show_prediction_result': True
-                }
-                return render(request, "staff_template/edit_student_result.html", context)
-            except (ValueError, Student.DoesNotExist, Subject.DoesNotExist, StudentResult.DoesNotExist) as e:
-                messages.error(request, "Error in calculation: " + str(e))
-                return redirect(reverse('edit_student_result'))
         else:
             # Fallback
             form = EditResultForm()

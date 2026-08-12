@@ -313,6 +313,9 @@ def student_view_result(request):
             target_gpa = float(request.POST.get('target_gpa'))
             if remaining_subjects > 0:
                 required_gpa_per_subject = (target_gpa * total_subjects - overall_gpa * completed_subjects) / remaining_subjects
+                # Cap required GPA per subject at maximum possible (4.0)
+                if required_gpa_per_subject > 4.0:
+                    required_gpa_per_subject = 4.0
                 # Convert required GPA per subject to total marks out of 100 (since each subject out of 100)
                 required_total_marks_per_subject = required_gpa_per_subject * 25.0  # because GPA = (marks/100)*4 => marks = GPA*25
                 # Split equally between Internal and Final Exam (each out of 50)
@@ -331,15 +334,8 @@ def student_view_result(request):
                 required_total_marks_per_subject = None
                 required_internal_per_subject = None
                 required_final_per_subject = None
-            context.update({
-                'target_gpa': target_gpa,
-                'required_gpa_per_subject': required_gpa_per_subject,
-                'required_total_marks_per_subject': required_total_marks_per_subject,
-                'required_internal_per_subject': required_internal_per_subject,
-                'required_final_per_subject': required_final_per_subject,
-                'target_gpa_table': target_gpa_table,
-                'show_prediction_result': True
-            })
+            # Update the variables that will be used in the final context update
+            show_prediction_result = True
         except (ValueError, TypeError):
             pass  # Ignore invalid input
     else:
@@ -347,7 +343,13 @@ def student_view_result(request):
 
     context.update({
         'show_prediction_form': show_prediction_form,
-        'show_prediction_result': show_prediction_result
+        'show_prediction_result': show_prediction_result,
+        'target_gpa': target_gpa if 'target_gpa' in locals() else None,
+        'required_gpa_per_subject': required_gpa_per_subject if 'required_gpa_per_subject' in locals() else None,
+        'required_total_marks_per_subject': required_total_marks_per_subject if 'required_total_marks_per_subject' in locals() else None,
+        'required_internal_per_subject': required_internal_per_subject if 'required_internal_per_subject' in locals() else None,
+        'required_final_per_subject': required_final_per_subject if 'required_final_per_subject' in locals() else None,
+        'target_gpa_table': target_gpa_table if 'target_gpa_table' in locals() else []
     })
 
     return render(request, "student_template/student_view_result.html", context)
