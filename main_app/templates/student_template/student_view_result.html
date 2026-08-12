@@ -127,6 +127,12 @@
 
             {% if required_gpa_per_subject != None %}
 
+            {% if required_gpa_per_subject >= 4.0 %}
+            <div class="alert alert-danger">
+                <strong>Target GPA is not achievable:</strong> Even with perfect scores in all remaining subjects, you cannot reach your target GPA.
+            </div>
+            {% else %}
+
             <div class="alert alert-success">
                 <strong>Required GPA per Remaining Subject:</strong>
                 {{ required_gpa_per_subject|floatformat:2 }}
@@ -143,6 +149,8 @@
                 <strong>Required Final Exam Marks per Remaining Subject (out of 50):</strong>
                 {{ required_final_per_subject|floatformat:2 }}
             </div>
+            {% endif %}
+
 
             {% if target_gpa_table %}
             <div class="alert alert-info mt-3">
